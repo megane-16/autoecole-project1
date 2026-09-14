@@ -1,0 +1,146 @@
+/* Palette principale de l'application DriveFlow */
+:root {
+    --color-page-bg: #f5f7f2;
+    --color-page-bg-soft: #d9eee2;
+    --color-page-bg-green: #d6ecdf;
+    --color-primary: #17342d;
+    --color-primary-strong: #285347;
+    --color-primary-soft: #33554b;
+    --color-secondary: #e6a43a;
+    --color-secondary-deep: #b56d12;
+    --color-text: #17342d;
+    --color-text-muted: #527066;
+    --color-text-subtle: #6f877e;
+    --color-border: #d7e2db;
+    --color-card: #ffffff;
+    --color-surface: #f8faf7;
+    --color-success: #1d8a63;
+    --color-danger: #d9534f;
+    --color-danger-soft: #fff1f1;
+    --color-shadow: rgba(23, 52, 45, 0.14);
+    --color-shadow-strong: rgba(23, 52, 45, 0.2);
+    --color-brand: #17342d;
+}
+
+/* Base du site */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--color-page-bg);
+    color: var(--color-text);
+}
+
+/* Boutons principaux : verts foncés comme sur la landing page */
+.btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(23, 52, 45, 0.18);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background: var(--color-primary-strong);
+    border-color: var(--color-primary-strong);
+    color: #fff;
+}
+
+body .btn-driveflow,
+body .btn-primary {
+    background: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 24px rgba(23, 52, 45, 0.18) !important;
+}
+
+body .btn-driveflow:hover,
+body .btn-driveflow:focus,
+body .btn-driveflow:active,
+body .btn-primary:hover,
+body .btn-primary:focus,
+body .btn-primary:active {
+    background: var(--color-primary-strong) !important;
+    border-color: var(--color-primary-strong) !important;
+    color: #fff !important;
+}
+
+/* Boutons secondaires / outline */
+.btn-outline-primary {
+    color: var(--color-primary);
+    border-color: rgba(23, 52, 45, 0.24);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+    background: rgba(23, 52, 45, 0.06);
+    border-color: rgba(23, 52, 45, 0.3);
+    color: var(--color-primary);
+}
+
+/* Cartes et conteneurs des pages auth */
+body .auth-card,
+body .card {
+    background: var(--color-card) !important;
+    border: 1px solid rgba(23, 52, 45, 0.08) !important;
+    box-shadow: 0 24px 60px rgba(23, 52, 45, 0.12) !important;
+}
+
+/* Champs de formulaire */
+body .auth-input,
+body .form-control,
+body .form-select {
+    background-color: #fff !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0.875rem !important;
+    padding: 0.8rem 1rem !important;
+    color: var(--color-text) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+body .auth-input:focus,
+body .form-control:focus,
+body .form-select:focus {
+    border-color: rgba(23, 52, 45, 0.45) !important;
+    box-shadow: 0 0 0 0.2rem rgba(23, 52, 45, 0.12) !important;
+}
+
+/* Cases à cocher et éléments de permis */
+body .permit-item {
+    background-color: #fff !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0.9rem !important;
+    color: var(--color-primary-soft) !important;
+}
+
+/* Liens et textes brand */
+body .helper-link,
+body .text-brand,
+body a.text-brand {
+    color: var(--color-primary) !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.form-check-input:focus {
+    border-color: rgba(23, 52, 45, 0.45);
+    box-shadow: 0 0 0 0.2rem rgba(23, 52, 45, 0.12);
+}
+
+.text-brand {
+    color: var(--color-primary) !important;
+}
+
+.text-muted-brand {
+    color: var(--color-text-muted) !important;
+}
+
+.border-brand-soft {
+    border-color: var(--color-border) !important;
+}
