@@ -51,6 +51,7 @@ use Laravel\Sanctum\HasApiTokens;
     'auto_ecole',
     'horaire_formation',
     'has_cni',
+    'photo_profil',
     'role',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -86,4 +87,27 @@ class User extends Authenticatable implements PasskeyUser
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
     }
+
+    public function lessonsAsInstructor(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lesson::class, 'instructor_id');
+    }
+
+    public function lessonsAsStudent(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lesson::class, 'student_id');
+    }
+
+    public function assignedStudents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'instructor_student', 'instructor_id', 'student_id')
+            ->withTimestamps();
+    }
+
+    public function assignedInstructors(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'instructor_student', 'student_id', 'instructor_id')
+            ->withTimestamps();
+    }
 }
+

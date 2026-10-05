@@ -169,11 +169,28 @@ class DashboardTest extends TestCase
             ->assertSee('Claire Apprentie');
     }
 
-    public function test_admin_dashboard_preview_is_publicly_available(): void
+    public function test_admin_dashboard_preview_requires_admin_authentication(): void
     {
+        // Un invité est redirigé vers le login
         $this->get(route('admin.preview'))
+            ->assertRedirect(route('login'));
+
+        // Un utilisateur normal est rejeté
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get(route('admin.preview'))
+            ->assertForbidden();
+
+        // Un administrateur connecté y accède
+        $admin = User::factory()->create(['role' => UserRole::Administrateur]);
+        $this->actingAs($admin)
+            ->get(route('admin.preview'))
             ->assertOk()
             ->assertSee('Mode prévisualisation')
-            ->assertSee('Croissance de la plateforme');
+            ->assertSee('Flux des demandes', false);
     }
 }
+
+
+
+

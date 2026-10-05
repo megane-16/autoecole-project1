@@ -1,7 +1,7 @@
 <x-layouts::app :title="__('Demandes d\'inscription')">
     <style>
         .demandes-container {
-            padding: 22px 34px 28px;
+            padding: 0;
         }
         .demandes-card {
             border: 1px solid #e7edf2;

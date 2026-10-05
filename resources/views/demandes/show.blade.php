@@ -1,7 +1,7 @@
 <x-layouts::app :title="__('Détails de la demande')">
     <style>
         .details-container {
-            padding: 22px 34px 28px;
+            padding: 0;
         }
         .details-card {
             border: 1px solid #e7edf2;
@@ -59,15 +59,20 @@
             </div>
 
             <div class="actions-footer">
-                <form action="{{ route('demandes.destroy', [$team->slug, $request->id]) }}" method="POST" onsubmit="return confirm('Supprimer cette demande ?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #fdeaea; color: #dc3545; border: none; cursor: pointer; font-weight: 700;">Rejeter la demande</button>
-                </form>
                 @if ($request->status === 'pending')
-                    <form action="{{ route('demandes.validate', [$team->slug, $request->id]) }}" method="POST">
+                    <form action="{{ route('demandes.reject', [$team->slug, $request->id]) }}" method="POST" onsubmit="return confirm('Refuser cette demande et avertir l\'apprenant ?')">
                         @csrf
-                        <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #2f6fed; color: #fff; border: none; cursor: pointer; font-weight: 700;">Valider et créer l'accès</button>
+                        <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #fdeaea; color: #dc3545; border: none; cursor: pointer; font-weight: 700;">Refuser la demande</button>
+                    </form>
+                    <form action="{{ route('demandes.validate', [$team->slug, $request->id]) }}" method="POST" onsubmit="return confirm('Valider cette inscription ?')">
+                        @csrf
+                        <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #2f6fed; color: #fff; border: none; cursor: pointer; font-weight: 700;">Valider et envoyer le code</button>
+                    </form>
+                @else
+                    <form action="{{ route('demandes.destroy', [$team->slug, $request->id]) }}" method="POST" onsubmit="return confirm('Supprimer définitivement cette demande ?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #fdeaea; color: #dc3545; border: none; cursor: pointer; font-weight: 700;">Supprimer l'historique</button>
                     </form>
                 @endif
             </div>

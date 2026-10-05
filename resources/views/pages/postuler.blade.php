@@ -7,8 +7,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; color: #17342d; background: #f5f7f2; }
-        .container { width: min(100% - 32px, 850px); margin: 0 auto; }
+        body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; color: #17342d; background: #17342d; }
+        .container { width: min(100% - 200px, 850px);;margin: 0  auto; }
         .py-5 { padding: 48px 0; }
         .mb-4 { margin-bottom: 24px; }
         .mb-5 { margin-bottom: 38px; }
@@ -31,10 +31,10 @@
         .form-control:focus, .form-select:focus { outline: 0; border-color: #e6a43a; box-shadow: 0 0 0 4px rgba(230, 164, 58, 0.16); }
         .form-check { display: flex; align-items: flex-start; gap: 10px; }
         .form-check-input { width: 18px; height: 18px; margin-top: 2px; accent-color: #17342d; }
-        .border { border: 1px solid #d7e2db; }
+        .border { border: 1px solid #053316; }
         .rounded-3 { border-radius: 14px; }
         .p-3 { padding: 16px; }
-        .bg-white { background: #fff; }
+        .bg-white { background: #ffffff; }
         .alert { padding: 16px; }
         .alert-danger { color: #9f2828; background: #fff0f0; border: 1px solid #f2c5c5; }
         .w-100 { width: 100%; }

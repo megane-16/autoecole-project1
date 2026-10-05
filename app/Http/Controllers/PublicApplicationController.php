@@ -35,11 +35,16 @@ class PublicApplicationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
-                'required', 'string', 'email', 'max:255', 'unique:users,email',
-                Rule::unique('registration_requests', 'email')->where('status', 'pending'),
+                'required', 'string', 'email', 'max:255',
+                'unique:users,email',
+                Rule::unique('registration_requests', 'email')->where(fn ($q) => $q->whereIn('status', ['pending', 'validated'])),
             ],
             'password' => ['required', 'string', Password::min(8), 'confirmed'],
-            'telephone' => 'nullable|string|max:30',
+            'telephone' => [
+                'nullable', 'string', 'max:30',
+                'unique:users,telephone',
+                Rule::unique('registration_requests', 'telephone')->where(fn ($q) => $q->whereIn('status', ['pending', 'validated'])),
+            ],
             'ville' => 'nullable|string|max:255',
             'sexe' => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
@@ -48,6 +53,9 @@ class PublicApplicationController extends Controller
             'auto_ecole' => 'nullable|string|max:255',
             'horaire_formation' => 'nullable|string|max:255',
             'has_cni' => 'nullable|boolean',
+        ], [
+            'email.unique' => 'Un compte ou une demande d’inscription existe déjà avec cette adresse email.',
+            'telephone.unique' => 'Un compte ou une demande d’inscription existe déjà avec ce numéro de téléphone.',
         ]);
 
         if (isset($validated['auto_ecole_id']) && (int) $validated['auto_ecole_id'] !== $team->id) {

@@ -96,6 +96,17 @@ class Team extends Model
     }
 
     /**
+     * Get all registration requests for this team.
+     *
+     * @return HasMany<RegistrationRequest, $this>
+     */
+    public function registrationRequests(): HasMany
+    {
+        return $this->hasMany(RegistrationRequest::class);
+    }
+
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

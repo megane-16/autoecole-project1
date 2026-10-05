@@ -91,13 +91,38 @@ class RegistrationRequestController extends Controller
             ->with('success', "Demande validée avec succès. L'apprenant a reçu son code : $code");
     }
 
+    public function rejectRequest(Team $currentTeam, RegistrationRequest $registrationRequest)
+    {
+        $this->ensureRequestBelongsToTeam($currentTeam, $registrationRequest);
+
+        $registrationRequest->update([
+            'status' => 'rejected',
+        ]);
+
+        try {
+            Mail::to($registrationRequest->email)->send(new \App\Mail\RegistrationRejected($registrationRequest));
+        } catch (\Exception $e) {
+            logger()->error('Erreur envoi mail refus inscription: '.$e->getMessage());
+        }
+
+        return redirect()->route('demandes.index', ['current_team' => $currentTeam->slug])
+            ->with('success', 'La demande a été refusée et un email explicatif a été envoyé au candidat.');
+    }
+
     public function destroy(Team $currentTeam, RegistrationRequest $registrationRequest)
     {
         $this->ensureRequestBelongsToTeam($currentTeam, $registrationRequest);
+        
+        try {
+            Mail::to($registrationRequest->email)->send(new \App\Mail\RegistrationRejected($registrationRequest));
+        } catch (\Exception $e) {
+            logger()->error('Erreur envoi mail refus inscription: '.$e->getMessage());
+        }
+
         $registrationRequest->delete();
 
         return redirect()->route('demandes.index', ['current_team' => $currentTeam->slug])
-            ->with('success', 'Demande supprimée avec succès.');
+            ->with('success', 'Demande refusée et supprimée avec succès.');
     }
 
     private function ensureRequestBelongsToTeam(Team $team, RegistrationRequest $registrationRequest): void

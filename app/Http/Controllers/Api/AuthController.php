@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RegistrationRequest;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\AutoEcoleNameMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,9 +17,17 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
+            'email' => [
+                'required', 'string', 'email', 'max:255',
+                'unique:users,email',
+                \Illuminate\Validation\Rule::unique('registration_requests', 'email')->where(fn ($q) => $q->whereIn('status', ['pending', 'validated'])),
+            ],
             'password' => 'required|string|min:8|confirmed',
-            'telephone' => 'nullable|string|max:30',
+            'telephone' => [
+                'nullable', 'string', 'max:30',
+                'unique:users,telephone',
+                \Illuminate\Validation\Rule::unique('registration_requests', 'telephone')->where(fn ($q) => $q->whereIn('status', ['pending', 'validated'])),
+            ],
             'ville' => 'nullable|string|max:255',
             'sexe' => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
@@ -27,6 +36,9 @@ class AuthController extends Controller
             'has_cni' => 'nullable|boolean',
             'auto_ecole_id' => 'nullable|integer|exists:teams,id',
             'auto_ecole' => 'nullable|string|max:255',
+        ], [
+            'email.unique' => 'Un compte ou une demande d’inscription existe déjà avec cette adresse email.',
+            'telephone.unique' => 'Un compte ou une demande d’inscription existe déjà avec ce numéro de téléphone.',
         ]);
 
         $teamId = $request->input('auto_ecole_id');
@@ -91,6 +103,38 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'User logged in successfully',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user,
+        ]);
+    }
+
+    public function loginByCode(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $code = strtoupper(trim($request->code));
+        $registrationRequest = RegistrationRequest::where('validation_code', $code)
+            ->where('status', 'validated')
+            ->latest()
+            ->first();
+
+        if (! $registrationRequest) {
+            return response()->json(['message' => 'Code de validation invalide ou expiré.'], 404);
+        }
+
+        $user = User::where('email', $registrationRequest->email)->first();
+
+        if (! $user) {
+            return response()->json(['message' => 'Aucun compte associé à ce code de validation.'], 404);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Connexion réussie',
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,

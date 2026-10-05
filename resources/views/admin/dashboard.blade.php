@@ -13,7 +13,7 @@
         }
 
         .drive-admin {
-            background: var(--drive-bg);
+            background: transparent;
             min-height: 100%;
         }
 
@@ -246,23 +246,32 @@
         }
     </style>
 
-    <div class="drive-admin flex w-full flex-1 flex-col gap-6 p-4 lg:p-8">
+    <div class="drive-admin flex w-full flex-1 flex-col gap-6">
         <div class="drive-admin__header">
             <div>
-                <div class="drive-admin__eyebrow">Espace administration</div>
+                <div class="drive-admin__eyebrow">Administration SaaS</div>
                 <h1 class="mt-2 text-3xl font-black tracking-[-0.06em] text-[#17342d]">Bonjour, Administrateur</h1>
                 <p class="mt-1 text-sm text-[#527066]">Voici l’état actuel de votre plateforme.</p>
             </div>
-            <div class="drive-admin__badge">Accès administrateur</div>
+            <div class="flex items-center gap-2">
+                @if (!empty($preview))
+                    <div class="drive-admin__badge bg-amber-100 text-amber-900 border-amber-300">Mode prévisualisation</div>
+                @endif
+                <div class="drive-admin__badge">Accès administrateur</div>
+            </div>
         </div>
 
-        <div class="drive-admin__stats">
+
+        <div class="drive-admin__stats" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
             @foreach ([
-                ['label' => 'Auto-écoles', 'value' => $autoEcolesCount, 'icon' => '⌂', 'note' => 'Comptes professionnels'],
-                ['label' => 'Utilisateurs', 'value' => $usersCount, 'icon' => '◉', 'note' => 'Comptes inscrits'],
-                ['label' => 'Emails vérifiés', 'value' => $verifiedUsersCount, 'icon' => '✓', 'note' => ($usersCount ? round($verifiedUsersCount / $usersCount * 100) : 0) . ' % de la base'],
-                ['label' => 'Administrateurs', 'value' => $administratorsCount, 'icon' => '★', 'note' => 'Accès plateforme'],
+                ['label' => 'Auto-écoles', 'value' => $autoEcolesCount, 'icon' => '⌂', 'note' => 'Établissements partenaires'],
+                ['label' => 'Utilisateurs', 'value' => $usersCount ?? 0, 'icon' => '👥', 'note' => ($learnersCount ?? 0).' apprenants inscrits'],
+                ['label' => 'Total Demandes', 'value' => $totalRequestsCount ?? 0, 'icon' => '📬', 'note' => 'Candidatures reçues'],
+                ['label' => 'Demandes en attente', 'value' => $pendingRequestsCount ?? 0, 'icon' => '⏳', 'note' => 'À valider par les écoles'],
+                ['label' => 'Demandes validées', 'value' => $validatedRequestsCount ?? 0, 'icon' => '✓', 'note' => 'Élèves intégrés'],
+                ['label' => 'Comptes vérifiés', 'value' => $verifiedUsersCount, 'icon' => '🛡️', 'note' => ($usersCount ? round($verifiedUsersCount / $usersCount * 100) : 0) . ' % de la base'],
             ] as $stat)
+
                 <div class="drive-stat-card">
                     <div class="drive-stat-card__top">
                         <div>
@@ -280,20 +289,34 @@
             <div class="drive-panel">
                 <div class="drive-panel__header">
                     <div>
-                        <h2 class="drive-panel__title">Croissance de la plateforme</h2>
-                        <p class="drive-panel__subtitle">Activité des 30 derniers jours</p>
+                        <h2 class="drive-panel__title">Flux des demandes d'inscription</h2>
+                        <p class="drive-panel__subtitle">Répartition globale des inscriptions</p>
                     </div>
-                    <span class="drive-badge">+18,4 %</span>
+                    <span class="drive-badge">Temps réel</span>
                 </div>
                 <div class="drive-panel__body">
-                    <div class="drive-chart" aria-label="Graphique de croissance">
-                        @foreach ([35, 48, 42, 65, 58, 78, 92, 72, 86, 100, 88, 96] as $height)
-                            <div class="drive-chart__bar" style="height: {{ $height }}%; opacity: {{ 0.45 + $loop->index / 20 }}"></div>
-                        @endforeach
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-top: 8px;">
+                        <div style="padding: 16px; border-radius: 12px; background: #f0fdf4; border: 1px solid #bbf7d0;">
+                            <span style="font-size: 11.5px; text-transform: uppercase; color: #15803d; font-weight: 700;">Validées</span>
+                            <strong style="display: block; font-size: 24px; color: #166534; margin-top: 4px;">{{ $validatedRequestsCount }}</strong>
+                            <span style="font-size: 12px; color: #15803d;">{{ $totalRequestsCount ? round(($validatedRequestsCount / $totalRequestsCount) * 100) : 0 }} % du total</span>
+                        </div>
+
+                        <div style="padding: 16px; border-radius: 12px; background: #fffbeb; border: 1px solid #fef3c7;">
+                            <span style="font-size: 11.5px; text-transform: uppercase; color: #b45309; font-weight: 700;">En attente</span>
+                            <strong style="display: block; font-size: 24px; color: #92400e; margin-top: 4px;">{{ $pendingRequestsCount }}</strong>
+                            <span style="font-size: 12px; color: #b45309;">{{ $totalRequestsCount ? round(($pendingRequestsCount / $totalRequestsCount) * 100) : 0 }} % du total</span>
+                        </div>
                     </div>
-                    <div class="mt-3 flex items-center justify-between text-[0.7rem] font-medium text-[#527066]">
-                        <span>01 août</span>
-                        <span>Aujourd’hui</span>
+
+                    <div style="margin-top: 24px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; color: #527066; font-weight: 600;">
+                            <span>Taux de conversion des demandes</span>
+                            <span>{{ $totalRequestsCount ? round(($validatedRequestsCount / $totalRequestsCount) * 100) : 0 }}%</span>
+                        </div>
+                        <div class="drive-progress" style="margin-top: 0;">
+                            <span style="width: {{ $totalRequestsCount ? round(($validatedRequestsCount / $totalRequestsCount) * 100) : 0 }}%"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -301,52 +324,68 @@
             <div class="drive-panel">
                 <div class="drive-panel__header">
                     <div>
-                        <h2 class="drive-panel__title">Vérification</h2>
-                        <p class="drive-panel__subtitle">Progression des emails vérifiés</p>
+                        <h2 class="drive-panel__title">Dernières candidatures</h2>
+                        <p class="drive-panel__subtitle">Demandes récentes reçues</p>
                     </div>
                 </div>
-                <div class="drive-panel__body">
-                    <div class="text-4xl font-black tracking-[-0.06em] text-[#17342d]">
-                        {{ $usersCount ? round($verifiedUsersCount / $usersCount * 100) : 0 }}%
-                    </div>
-                    <div class="drive-progress">
-                        <span style="width: {{ $usersCount ? round($verifiedUsersCount / $usersCount * 100) : 0 }}%"></span>
-                    </div>
-                    <p class="mt-3 text-sm text-[#527066]">
-                        {{ $verifiedUsersCount }} comptes vérifiés sur {{ $usersCount }}
-                    </p>
+                <div class="drive-panel__body" style="padding: 0.8rem 1.2rem;">
+                    @forelse ($recentRequests ?? [] as $req)
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #edf2f7;">
+                            <div>
+                                <strong style="font-size: 13.5px; color: #17342d; display: block;">{{ $req->name }}</strong>
+                                <span style="font-size: 11px; color: #64748b;">
+                                    {{ $req->team?->name ?? 'Auto-école' }} • {{ $req->created_at?->diffForHumans() }}
+                                </span>
+                            </div>
+                            <span class="drive-badge" style="background: {{ $req->status === 'validated' ? 'rgba(39, 130, 94, 0.12)' : 'rgba(230, 164, 58, 0.14)' }}; color: {{ $req->status === 'validated' ? '#0d7a5d' : '#b45309' }};">
+                                {{ $req->status === 'validated' ? 'Validée' : 'En attente' }}
+                            </span>
+                        </div>
+                    @empty
+                        <p style="font-size: 12.5px; color: #64748b; padding: 16px 0; text-align: center;">Aucune demande enregistrée.</p>
+                    @endforelse
                 </div>
             </div>
         </div>
 
-        <div class="drive-panel">
+        <div class="drive-panel" id="auto-ecoles">
             <div class="drive-panel__header">
                 <div>
-                    <h2 class="drive-panel__title">Auto-écoles récemment inscrites</h2>
-                    <p class="drive-panel__subtitle">Les comptes professionnels à surveiller</p>
+                    <h2 class="drive-panel__title">Statistiques des demandes par Auto-école</h2>
+                    <p class="drive-panel__subtitle">Vue détaillée du volume de demandes et membres par auto-école</p>
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="drive-table w-full text-left text-sm">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3">Nom</th>
-                            <th class="px-4 py-3">Membres</th>
-                            <th class="px-4 py-3">Créée le</th>
-                            <th class="px-4 py-3">Statut</th>
+                            <th class="px-4 py-3">Nom de l'auto-école</th>
+                            <th class="px-4 py-3">Total Demandes</th>
+                            <th class="px-4 py-3">En attente</th>
+                            <th class="px-4 py-3">Validées</th>
+                            <th class="px-4 py-3">Membres actuels</th>
+                            <th class="px-4 py-3">Inscription</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($teams as $team)
                             <tr>
                                 <td class="px-4 py-3 font-semibold text-[#17342d]">{{ $team->name }}</td>
-                                <td class="px-4 py-3 text-[#527066]">{{ $team->members_count }}</td>
-                                <td class="px-4 py-3 text-[#527066]">{{ $team->created_at?->format('d/m/Y') }}</td>
-                                <td class="px-4 py-3"><span class="drive-table__status">Actif</span></td>
+                                <td class="px-4 py-3 font-bold text-[#17342d]">
+                                    {{ $team->total_requests_count ?? 0 }}
+                                </td>
+                                <td class="px-4 py-3 text-amber-700 font-semibold">
+                                    {{ $team->pending_requests_count ?? 0 }}
+                                </td>
+                                <td class="px-4 py-3 text-emerald-700 font-semibold">
+                                    {{ $team->validated_requests_count ?? 0 }}
+                                </td>
+                                <td class="px-4 py-3 text-[#527066]">{{ $team->members_count }} membres</td>
+                                <td class="px-4 py-3 text-[#527066]">{{ $team->created_at?->translatedFormat('d M Y') ?? '—' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-[#527066]">Aucune auto-école inscrite.</td>
+                                <td colspan="6" class="px-4 py-8 text-center text-[#527066]">Aucune auto-école enregistrée.</td>
                             </tr>
                         @endforelse
                     </tbody>

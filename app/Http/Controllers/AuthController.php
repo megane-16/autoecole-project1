@@ -115,6 +115,10 @@ class AuthController extends Controller
 
         $team = $user->currentTeam ?? $user->personalTeam();
 
+        if ($user->role === UserRole::Moniteur && $team) {
+            return redirect()->route('instructor.schedule.index', ['current_team' => $team->slug]);
+        }
+
         return redirect()->route('dashboard', ['current_team' => $team->slug]);
     }
 

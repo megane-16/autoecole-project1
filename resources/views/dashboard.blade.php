@@ -11,8 +11,8 @@
             --gold: #f5b940;
             min-height: 100%;
             color: var(--ink);
-            background: #f7f9fb;
-            font-family: 'Instrument Sans', ui-sans-serif, sans-serif;
+            background: transparent;
+            font-family: inherit;
         }
 
         .drive-dashboard *,
@@ -22,7 +22,7 @@
         }
 
         .drive-dashboard__inner {
-            padding: 22px 34px 28px;
+            padding: 0;
         }
 
         .drive-dashboard__header,
@@ -426,37 +426,26 @@
     </style>
 
     @php
-        $team = auth()->user()->currentTeam ?? auth()->user()->personalTeam();
-
-        $teamLearners = $team
-            ? $team->members()
-                ->where('users.role', \App\Enums\UserRole::Apprenant->value)
-                ->orderByDesc('users.created_at')
-                ->get()
-            : collect();
-
-        $legacyLearners = $team
-            ? \App\Models\User::query()
-                ->where('role', \App\Enums\UserRole::Apprenant->value)
-                ->where(function ($query) use ($team) {
-                    $query->where('auto_ecole', $team->name)
-                        ->orWhere('auto_ecole', str_replace(['-', '_'], ' ', $team->name));
-                })
-                ->orderByDesc('created_at')
-                ->get()
-            : collect();
-
-        $learners = $teamLearners->merge($legacyLearners)->unique('id')->values();
-        $learnerCount = $learners->count();
+        $team = $currentTeam ?? auth()->user()->currentTeam ?? auth()->user()->personalTeam();
+        $learners = $learners ?? collect();
+        $learnerCount = $learnerCount ?? $learners->count();
+        $instructors = $instructors ?? collect();
+        $todayLessons = $todayLessons ?? collect();
+        $weekLessonsCount = $weekLessonsCount ?? 0;
+        $completedLessonsCount = $completedLessonsCount ?? 0;
+        $pendingRequestsCount = $pendingRequestsCount ?? 0;
+        $examLessonsCount = $examLessonsCount ?? 0;
+        $conduiteLessonsCount = $conduiteLessonsCount ?? 0;
+        $codeLessonsCount = $codeLessonsCount ?? 0;
     @endphp
 
     <main class="drive-dashboard">
         <div class="drive-dashboard__inner">
             <header class="drive-dashboard__header">
                 <div>
-                    <p class="drive-dashboard__eyebrow">Espace auto-école</p>
+                    <p class="drive-dashboard__eyebrow">Espace auto-école • {{ $team?->name }}</p>
                     <h1>Bonjour, {{ auth()->user()->name }}.</h1>
-                    <p class="drive-dashboard__subtitle">Voici ce qui se passe dans votre établissement aujourd’hui.</p>
+                    <p class="drive-dashboard__subtitle">Voici l'état opérationnel de votre établissement en temps réel.</p>
                 </div>
                 <div class="drive-dashboard__date">
                     <strong>{{ now()->translatedFormat('D d M') }}</strong> · {{ now()->format('Y') }}
@@ -465,10 +454,10 @@
 
             <section class="drive-stats" aria-label="Résumé de l'activité">
                 @foreach ([
-                    ['label' => 'apprenants inscrits', 'value' => $learnerCount, 'trend' => '+0 %', 'color' => 'var(--blue)'],
-                    ['label' => 'Leçons cette semaine', 'value' => '46', 'trend' => '+12,1 %', 'color' => 'var(--mint)'],
-                    ['label' => 'Examens à venir', 'value' => '09', 'trend' => '3 cette semaine', 'color' => 'var(--gold)'],
-                    ['label' => 'Taux de réussite', 'value' => '78 %', 'trend' => '+4,6 %', 'color' => '#ef6b73'],
+                    ['label' => 'Apprenants inscrits', 'value' => $learnerCount, 'trend' => 'Total réseau', 'color' => 'var(--blue)'],
+                    ['label' => 'Leçons cette semaine', 'value' => $weekLessonsCount, 'trend' => $todayLessons->count().' aujourd\'hui', 'color' => 'var(--mint)'],
+                    ['label' => 'Demandes en attente', 'value' => $pendingRequestsCount, 'trend' => 'À valider', 'color' => 'var(--gold)'],
+                    ['label' => 'Leçons terminées', 'value' => $completedLessonsCount, 'trend' => 'Heures dispensées', 'color' => '#ef6b73'],
                 ] as $stat)
                     <article class="drive-stat" style="--stat-color: {{ $stat['color'] }}">
                         <span class="drive-stat__label">{{ $stat['label'] }}</span>
@@ -483,40 +472,152 @@
             <section class="drive-dashboard__content">
                 <article class="drive-panel" id="planning">
                     <div class="drive-panel__header">
-                        <h2 class="drive-panel__title">Planning du jour</h2>
-                        <a class="drive-link" href="#planning">Voir le planning</a>
+                        <h2 class="drive-panel__title">Planning du jour ({{ $todayLessons->count() }} cours)</h2>
+                        <a class="drive-link" href="{{ route('instructor.schedule.index', ['current_team' => $team?->slug]) }}">Voir le planning complet</a>
                     </div>
-                    @foreach ([
-                        ['time' => '09:00', 'duration' => '60 min', 'name' => 'Leçon de conduite · Permis B', 'meta' => 'Sophie Martin · avec Karim N.', 'status' => 'Confirmée', 'class' => 'green'],
-                        ['time' => '11:30', 'duration' => '45 min', 'name' => 'Évaluation de conduite', 'meta' => 'Lucas Bernard · avec Nadia T.', 'status' => 'En cours', 'class' => 'blue'],
-                        ['time' => '14:00', 'duration' => '60 min', 'name' => 'Leçon de conduite · Permis A', 'meta' => 'Emma Petit · avec Karim N.', 'status' => 'À confirmer', 'class' => 'gold'],
-                    ] as $event)
+                    @forelse ($todayLessons as $lesson)
                         <div class="drive-event">
-                            <div class="drive-event__time"><strong>{{ $event['time'] }}</strong>{{ $event['duration'] }}</div>
-                            <div><p class="drive-event__name">{{ $event['name'] }}</p><p class="drive-event__meta">{{ $event['meta'] }}</p></div>
-                            <span class="drive-tag drive-tag--{{ $event['class'] }}">{{ $event['status'] }}</span>
+                            <div class="drive-event__time">
+                                <strong>{{ $lesson->starts_at->format('H:i') }}</strong>
+                                {{ $lesson->starts_at->diffInMinutes($lesson->ends_at) }} min
+                            </div>
+                            <div>
+                                <p class="drive-event__name">{{ $lesson->title ?? $lesson->formatted_type }}</p>
+                                <p class="drive-event__meta">
+                                    Élève : <strong>{{ $lesson->student?->name ?? 'Non assigné' }}</strong> • Moniteur : <strong>{{ $lesson->instructor?->name ?? 'Non assigné' }}</strong>
+                                </p>
+                            </div>
+                            <span class="drive-tag drive-tag--{{ $lesson->status === 'termine' ? 'green' : ($lesson->status === 'en_cours' ? 'blue' : 'gold') }}">
+                                {{ $lesson->status_label }}
+                            </span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div style="padding: 24px 0; text-align: center; color: var(--muted); font-size: .85rem;">
+                            Aucune leçon programmée pour aujourd'hui. Utilisez le formulaire ci-dessous pour planifier un cours.
+                        </div>
+                    @endforelse
+
+                    <!-- Formulaire de planification de cours direct -->
+                    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line);">
+                        <h3 style="font-size: .92rem; font-weight: 700; margin-bottom: 12px; color: var(--ink);">
+                            + Planifier une nouvelle leçon pour un moniteur
+                        </h3>
+                        <form method="POST" action="{{ route('dashboard.lessons.store', ['current_team' => $team?->slug]) }}" class="drive-learner-form" style="margin-bottom: 0;">
+                            @csrf
+                            <div class="drive-learner-form__grid">
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-title">Titre / Objectif du cours</label>
+                                    <input id="lesson-title" type="text" name="title" required placeholder="Ex. Conduite urbaine & créneaux">
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-instructor">Moniteur responsable</label>
+                                    <select id="lesson-instructor" name="instructor_id" required>
+                                        <option value="">Sélectionner un moniteur</option>
+                                        @foreach ($instructors as $inst)
+                                            <option value="{{ $inst->id }}">{{ $inst->name }} ({{ $inst->email }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-student">Apprenant</label>
+                                    <select id="lesson-student" name="student_id">
+                                        <option value="">Sélectionner un apprenant</option>
+                                        @foreach ($learners as $st)
+                                            <option value="{{ $st->id }}">{{ $st->name }} (Permis {{ $st->categorie_permis ?? 'B' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-type">Type de formation</label>
+                                    <select id="lesson-type" name="type" required>
+                                        <option value="conduite">Leçon de conduite</option>
+                                        <option value="code">Cours de code</option>
+                                        <option value="examen_blanc">Examen blanc</option>
+                                        <option value="evaluation">Évaluation</option>
+                                    </select>
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-start">Date & Heure de début</label>
+                                    <input id="lesson-start" type="datetime-local" name="starts_at" required value="{{ now()->addHour()->format('Y-m-d\TH:00') }}">
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-end">Date & Heure de fin</label>
+                                    <input id="lesson-end" type="datetime-local" name="ends_at" required value="{{ now()->addHours(2)->format('Y-m-d\TH:00') }}">
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-pickup">Lieu de prise en charge</label>
+                                    <input id="lesson-pickup" type="text" name="pickup_location" placeholder="Ex. Devant l'agence ou Gare">
+                                </div>
+                                <div class="drive-learner-form__field">
+                                    <label for="lesson-status">Statut initial</label>
+                                    <select id="lesson-status" name="status" required>
+                                        <option value="planifie">Planifié</option>
+                                        <option value="en_cours">En cours</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="drive-learner-form__actions">
+                                <button type="submit" class="drive-learner-form__submit" style="background: var(--mint);">
+                                    Enregistrer & Transmettre au moniteur
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </article>
 
                 <article class="drive-panel">
-                    <div class="drive-panel__header"><h2 class="drive-panel__title">Progression des élèves</h2><a class="drive-link" href="#eleves">Détails</a></div>
+                    <div class="drive-panel__header">
+                        <h2 class="drive-panel__title">Répartition des leçons</h2>
+                        <a class="drive-link" href="{{ route('instructor.lessons.index', ['current_team' => $team?->slug]) }}">Voir tout</a>
+                    </div>
                     <div class="drive-progress">
-                        @foreach ([['name' => 'Code de la route', 'value' => 82, 'color' => 'var(--blue)'], ['name' => 'Conduite', 'value' => 68, 'color' => 'var(--mint)'], ['name' => 'Examens blancs', 'value' => 54, 'color' => 'var(--gold)']] as $progress)
-                            <div class="drive-progress__item"><div class="drive-progress__labels"><strong>{{ $progress['name'] }}</strong><span>{{ $progress['value'] }} %</span></div><div class="drive-progress__bar"><span class="drive-progress__fill" style="--fill:{{ $progress['color'] }}; width:{{ $progress['value'] }}%"></span></div></div>
-                        @endforeach
+                        @php
+                            $totalL = max(1, $conduiteLessonsCount + $codeLessonsCount + $examLessonsCount);
+                        @endphp
+                        <div class="drive-progress__item">
+                            <div class="drive-progress__labels">
+                                <strong>Leçons de conduite</strong>
+                                <span>{{ $conduiteLessonsCount }} ({{ round(($conduiteLessonsCount / $totalL) * 100) }}%)</span>
+                            </div>
+                            <div class="drive-progress__bar">
+                                <span class="drive-progress__fill" style="--fill:var(--blue); width:{{ round(($conduiteLessonsCount / $totalL) * 100) }}%"></span>
+                            </div>
+                        </div>
+
+                        <div class="drive-progress__item">
+                            <div class="drive-progress__labels">
+                                <strong>Cours de code</strong>
+                                <span>{{ $codeLessonsCount }} ({{ round(($codeLessonsCount / $totalL) * 100) }}%)</span>
+                            </div>
+                            <div class="drive-progress__bar">
+                                <span class="drive-progress__fill" style="--fill:var(--mint); width:{{ round(($codeLessonsCount / $totalL) * 100) }}%"></span>
+                            </div>
+                        </div>
+
+                        <div class="drive-progress__item">
+                            <div class="drive-progress__labels">
+                                <strong>Examens blancs</strong>
+                                <span>{{ $examLessonsCount }} ({{ round(($examLessonsCount / $totalL) * 100) }}%)</span>
+                            </div>
+                            <div class="drive-progress__bar">
+                                <span class="drive-progress__fill" style="--fill:var(--gold); width:{{ round(($examLessonsCount / $totalL) * 100) }}%"></span>
+                            </div>
+                        </div>
                     </div>
                 </article>
             </section>
 
             <section class="drive-dashboard__footer">
                 <article class="drive-panel" id="eleves">
-                    <div class="drive-panel__header"><h2 class="drive-panel__title">apprenants récemment ajoutés</h2><a class="drive-link" href="#eleves">Gérer les élèves</a></div>
+                    <div class="drive-panel__header">
+                        <h2 class="drive-panel__title">Apprenants inscrits ({{ $learnerCount }})</h2>
+                        <a class="drive-link" href="{{ route('instructor.students.index', ['current_team' => $team?->slug]) }}">Gérer les apprenants</a>
+                    </div>
 
                     @if (session('success'))
-                        <div class="drive-notice" style="margin-top: 0; margin-bottom: 14px;">
+                        <div class="drive-notice" style="margin-top: 0; margin-bottom: 14px; background: #e5f8f3; color: #087a62;">
                             <span>✓</span>
-                            <div><strong>Apprenant ajouté</strong>{{ session('success') }}</div>
+                            <div><strong>Succès :</strong> {{ session('success') }}</div>
                         </div>
                     @endif
 
@@ -524,7 +625,7 @@
                         @csrf
                         <div class="drive-learner-form__grid">
                             <div class="drive-learner-form__field">
-                                <label for="learner-name">Nom</label>
+                                <label for="learner-name">Nom complet</label>
                                 <input id="learner-name" type="text" name="name" value="{{ old('name') }}" required placeholder="Ex. Claire Martin">
                             </div>
                             <div class="drive-learner-form__field">
@@ -533,14 +634,13 @@
                             </div>
                             <div class="drive-learner-form__field">
                                 <label for="learner-ville">Ville</label>
-                                <input id="learner-ville" type="text" name="ville" value="{{ old('ville') }}" placeholder="Paris">
+                                <input id="learner-ville" type="text" name="ville" value="{{ old('ville') }}" placeholder="Douala / Yaoundé">
                             </div>
                             <div class="drive-learner-form__field">
-                                <label for="learner-permis">Catégorie</label>
+                                <label for="learner-permis">Catégorie Permis</label>
                                 <select id="learner-permis" name="categorie_permis">
-                                    <option value="">Sélectionner</option>
                                     <option value="A" @selected(old('categorie_permis') === 'A')>Permis A</option>
-                                    <option value="B" @selected(old('categorie_permis') === 'B')>Permis B</option>
+                                    <option value="B" @selected(old('categorie_permis', 'B') === 'B')>Permis B</option>
                                     <option value="C" @selected(old('categorie_permis') === 'C')>Permis C</option>
                                     <option value="D" @selected(old('categorie_permis') === 'D')>Permis D</option>
                                 </select>
@@ -560,36 +660,64 @@
                         </div>
                     </form>
 
-                    <table class="drive-table"><thead><tr><th>apprenant</th><th>Formation</th><th>Inscription</th><th>Statut</th></tr></thead><tbody>
-                        @forelse ($learners as $student)
-                            @php
-                                $initials = strtoupper(substr($student->name, 0, 1) . (str_contains($student->name, ' ') ? substr(strrchr($student->name, ' '), 1, 1) : ''));
-                                $color = ['#2f6fed', '#1dbf9b', '#d48546'][($loop->index + 1) % 3];
-                            @endphp
+                    <table class="drive-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="drive-student">
-                                        <span class="drive-avatar" style="--avatar:{{ $color }}">{{ $initials }}</span>{{ $student->name }}
-                                    </div>
-                                </td>
-                                <td>{{ $student->categorie_permis ? 'Permis '.$student->categorie_permis : 'Permis B' }}</td>
-                                <td>{{ $student->created_at?->diffForHumans() ?? 'Récemment' }}</td>
-                                <td><span class="drive-status">Actif</span></td>
+                                <th>Apprenant</th>
+                                <th>Formation</th>
+                                <th>Date Inscription</th>
+                                <th>Statut</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-3">Aucun apprenant inscrit pour cette auto-école.</td>
-                            </tr>
-                        @endforelse
-                    </tbody></table>
+                        </thead>
+                        <tbody>
+                            @forelse ($learners as $student)
+                                @php
+                                    $initials = strtoupper(substr($student->name, 0, 1) . (str_contains($student->name, ' ') ? substr(strrchr($student->name, ' '), 1, 1) : ''));
+                                    $color = ['#2f6fed', '#1dbf9b', '#d48546'][($loop->index + 1) % 3];
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="drive-student">
+                                            <span class="drive-avatar" style="--avatar:{{ $color }}">{{ $initials }}</span>
+                                            <div>
+                                                <div>{{ $student->name }}</div>
+                                                <div style="font-size: 11px; color: var(--muted); font-weight: normal;">{{ $student->email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ $student->categorie_permis ? 'Permis '.$student->categorie_permis : 'Permis B' }}</td>
+                                    <td>{{ $student->created_at?->translatedFormat('d M Y') ?? 'Récemment' }}</td>
+                                    <td><span class="drive-status">Actif</span></td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Aucun apprenant inscrit pour cette auto-école.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </article>
 
                 <aside class="drive-panel">
                     <div class="drive-panel__header"><h2 class="drive-panel__title">Actions rapides</h2></div>
-                    <div class="drive-actions"><a class="drive-action" href="#eleves"><span class="drive-action__icon">+</span>Ajouter un élève</a><a class="drive-action" href="#planning"><span class="drive-action__icon">⌁</span>Planifier une leçon</a><a class="drive-action" href="#moniteurs"><span class="drive-action__icon">◉</span>Gérer les moniteurs</a><a class="drive-action" href="#rapports"><span class="drive-action__icon">↗</span>Voir les rapports</a></div>
-                    <div class="drive-notice"><span>!</span><div><strong>3 examens à préparer</strong>Les dossiers de cette semaine attendent une validation.</div></div>
+                    <div class="drive-actions">
+                        <a class="drive-action" href="#planning"><span class="drive-action__icon">⌁</span>Planifier un cours</a>
+                        <a class="drive-action" href="#eleves"><span class="drive-action__icon">+</span>Ajouter un apprenant</a>
+                        <a class="drive-action" href="{{ route('demandes.index', ['current_team' => $team?->slug]) }}"><span class="drive-action__icon">📬</span>Voir les demandes</a>
+                        <a class="drive-action" href="{{ route('instructor.lessons.index', ['current_team' => $team?->slug]) }}"><span class="drive-action__icon">🚗</span>Tous les cours</a>
+                    </div>
+                    @if ($pendingRequestsCount > 0)
+                        <div class="drive-notice">
+                            <span>!</span>
+                            <div>
+                                <strong>{{ $pendingRequestsCount }} demande(s) en attente</strong>
+                                Des candidatures d'inscription attendent votre validation.
+                            </div>
+                        </div>
+                    @endif
                 </aside>
             </section>
         </div>
     </main>
 </x-layouts::app>
+
