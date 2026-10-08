@@ -19,10 +19,11 @@ class TrafficSignController extends Controller
     public function analyze(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'image', 'max:10240'], // 10MB max
+            'image' => ['required', 'file', 'mimes:jpeg,png,jpg,gif,svg,webp,heic,heif', 'max:10240'], // 10MB max
         ], [
             'image.required' => 'Une image est requise pour effectuer l’analyse.',
-            'image.image' => 'Le fichier envoyé doit être une image valide (jpg, png, webp...).',
+            'image.file' => 'Le fichier envoyé doit être un fichier valide.',
+            'image.mimes' => 'Le fichier envoyé doit être une image valide (jpg, jpeg, png, webp, svg, heic...).',
             'image.max' => 'La taille de l’image ne doit pas dépasser 10 Mo.',
         ]);
 

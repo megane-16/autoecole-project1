@@ -35,9 +35,13 @@ class TrafficSignAiService
                 ? file_get_contents($image->getRealPath())
                 : file_get_contents($image);
 
-            $mimeType = $image instanceof UploadedFile
-                ? ($image->getMimeType() ?: 'image/jpeg')
-                : 'image/jpeg';
+            $mimeType = 'image/jpeg';
+            if (function_exists('finfo_open')) {
+                $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->buffer($imageData) ?: 'image/jpeg';
+            } elseif ($image instanceof UploadedFile) {
+                $mimeType = $image->getMimeType() ?: 'image/jpeg';
+            }
 
             $base64Image = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
 
@@ -96,14 +100,16 @@ PROMPT;
                         ],
                     ],
                 ],
+                'max_tokens' => 1000,
                 'temperature' => 0.1,
             ]);
 
             if ($response->failed()) {
-                Log::error('OpenRouter API Error: ' . $response->body());
+                $errorDetails = $response->body();
+                Log::error('OpenRouter API Error: ' . $errorDetails);
                 return [
                     'is_traffic_sign' => false,
-                    'message' => 'Erreur lors de la communication avec l’IA d’analyse.',
+                    'message' => 'Erreur lors de la communication avec l’IA d’analyse (Code ' . $response->status() . ').',
                 ];
             }
 
